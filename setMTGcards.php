@@ -9,11 +9,11 @@ $files = array(
 	'WAR.json',
 	'XLN.json'
 );
-foreach($files as $fileToInclude) {
-	$data = file_get_contents($fileToInclude);
-	$arrayData = [];
-	array_push($arrayData, $data);
+$dataArray = [];
+foreach($files as $fileName) {
+	$fullFileName = 'data/' . $fileName;
+	array_push($dataArray, json_decode(file_get_contents($fullFileName)));
 }
 
-file_put_contents('arrayData.txt', $arrayData);
+file_put_contents('dataArray.txt', json_encode($dataArray));
 ?>
