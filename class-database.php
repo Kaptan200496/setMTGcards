@@ -4,7 +4,7 @@
 
 class Database {
 	// Объект соединения с базой данных (mysqli)
-	private static $connection;
+	public static $connection;
 
 	// Метод для отправки запроса
 	// $sqlExpression (string) - SQL запрос

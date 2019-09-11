@@ -38,6 +38,8 @@ for($i = 0; $i < count($dataArray); $i++) {
 		$subtypes = json_encode($subtypesArray);
 		$supertypes = json_encode($supertypesArray);
 		// Запись в базу данных
+		$checkNameEx = "SELECT * FROM mtg_cards WHERE name = '{$name}'";
+		Database::
 		$insertExCards = "INSERT INTO mtg_cards (
 			name,
 			manaCost,
@@ -52,6 +54,8 @@ for($i = 0; $i < count($dataArray); $i++) {
 			{$toughness}
 		)";
 		Database::query($insertExCards);
+		$lastId = Database::$connection->insert_id;
 	}
 }
+file_put_contents("last_ID.txt", json_encode($last_id));
 ?>
