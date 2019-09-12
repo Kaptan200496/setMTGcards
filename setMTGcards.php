@@ -30,13 +30,15 @@ for($i = 0; $i < count($dataArray); $i++) {
 		$power = isset($currentCard->power) ? "'{$currentCard->power}'" : "NULL";
 		$toughness = isset($currentCard->toughness) ? "'{$currentCard->toughness}'" : "NULL";
 
-		$typesArray = isset($currentCard->types) ? $currentCard->types : [];
-		$subtypesArray =  isset($currentCard->subtypes) ? $currentCard->subtypes : [];
-		$supertypesArray = isset($currentCard->supertypes) ? $currentCard->supertypes : [];
+		$typesArray = isset($currentCard->types) ? $currentCard->types[0] : [];
+		for($k = 0; $k < count($currentCard->subtypes); $k++) {
+			$subtypesArray =  isset($currentCard->subtypes[$k]) ? $currentCard->subtypes[$k] : [];
+		}
+		$supertypesArray = isset($currentCard->supertypes) ? $currentCard->supertypes[0] : [];
 
-		$types = json_encode($typesArray);
-		$subtypes = json_encode($subtypesArray);
-		$supertypes = json_encode($supertypesArray);
+		file_put_contents("subtypes.txt", json_encode($subtypesArray));
+		file_put_contents("supertypes.txt", json_encode($supertypesArray));
+		file_put_contents("types.txt", json_encode($typesArray));
 		// Запись в базу данных
 		$checkNameEx = "SELECT * FROM mtg_cards WHERE name = {$name}";
 		$responseValidation = Database::query($checkNameEx);
@@ -56,8 +58,13 @@ for($i = 0; $i < count($dataArray); $i++) {
 			)";
 		Database::query($insertExCards);		
 		$lastId = Database::$connection->insert_id;
+		$selectTypeEx = "SELECT * FROM mtg_types WHERE name = {$typesArray}";
+		Database::query($selectTypeEx);
+		$insertTypeEx = "INSERT INTO mtg_types (name) VALUES ({$typesArray})";
+		Database::query($insertTypeEx);
+
 		}
 	}
 }
-file_put_contents("last_ID.txt", json_encode($lastId));
+
 ?>
