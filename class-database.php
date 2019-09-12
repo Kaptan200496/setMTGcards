@@ -19,6 +19,7 @@ class Database {
 				"error" => self::$connection->error
 			);
 			
+		print json_encode($errorDetails, JSON_PRETTY_PRINT);
 		}
 
 		return $queryResult;
