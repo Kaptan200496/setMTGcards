@@ -66,26 +66,40 @@ for($i = 0; $i < count($dataArray); $i++) {
 				{$prepearedToughness}
 			)";
 			Database::query($insertExCards);		
-			$lastId = Database::$connection->insert_id;
+			$lastIdCard = Database::$connection->insert_id;
 		}
 		$selectTypeEx = "SELECT * FROM mtg_types WHERE name = {$typesArray}";
 		$responseSelectTEx = Database::query($selectTypeEx);
 		if($responseSelectTEx->num_rows == 0) {
 			$insertTypeEx = "INSERT INTO mtg_types (name) VALUES ({$typesArray})";
 			Database::query($insertTypeEx);
+			$lastIdType = Database::$connection->insert_id;
 		}
 		$selectSubTypeEx = "SELECT * FROM mtg_subtypes WHERE name = {$subtypesArray}";
 		$responseSelectSubTEx = Database::query($selectSubTypeEx);
 		if($responseSelectSubTEx->num_rows == 0) {
-			$insertSubTypeEx = "INSERT INTO mtg_subtypes (name) VALUES ({$subtypesArray})";
+			$insertSubTypeEx = "INSERT INTO mtg_subtypes (name) 
+				VALUES ({$subtypesArray})";
 			Database::query($insertSubTypeEx);
+			$lastIdSubType = Database::$connection->insert_id;
 		}
 		$selectSuperTypeEx = "SELECT * FROM mtg_supertypes WHERE name = {$supertypesArray}";
 		$responseSelectSuperTEx = Database::query($selectSuperTypeEx);
 		if($responseSelectSuperTEx->num_rows == 0) {
-			$insertSuperTypeEx = "INSERT INTO mtg_supertypes (name) VALUES ({$supertypesArray})";
+			$insertSuperTypeEx = "INSERT INTO mtg_supertypes (name) 
+				VALUES ({$supertypesArray})";
 			Database::query($insertSuperTypeEx);
+			$lastIdSuperType = Database::$connection->insert_id;
 		}
+		$cardRelTypeEx = "INSERT INTO mtg_cardTypes (card, type) 
+			VALUES ({$lastIdCard}, {$lastIdType})";
+		Database::query($cardRelTypeEx);
+		$cardRelSubTypeEx = "INSERT INTO mtg_cardSubtypes (card, subtype) 
+			VALUES ({$lastIdCard}, {$lastIdSubType})";
+		Database::query($cardRelSubTypeEx);
+		$cardRelSuperTypeEx = "INSERT INTO mtg_cardSupertypes (card, supertype) 
+			VALUES ({$lastIdCard}, {$lastIdSuperType})";
+		Database::query($cardRelTypeEx);
 	}
 }
 
