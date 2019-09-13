@@ -70,7 +70,7 @@ foreach($dataArray as $deck) 	{
 		$subtypesArray = $card->subtypes;
 		$subtypeId;
 		foreach($subtypesArray as $subtype) {
-			$preparedSubtype = "'" . Database::sanitizeString($subtype);
+			$preparedSubtype = "'" . Database::sanitizeString($subtype) . "'";
 			$checkSubtypeEx = "SELECT * FROM mtg_subtypes WHERE name = {$preparedSubtype}";
 			$checkSubtypeResult = Database::query($checkSubtypeEx);
 			if($checkSubtypeResult->num_rows == 0) {
@@ -93,6 +93,35 @@ foreach($dataArray as $deck) 	{
 				{$cardId},
 				{$subtypeId}
 			)";
+			Database::query($insertRelCardSubtypeEx);
+		}
+		$supertypesArray = $card->supertypes;
+		$supertypeId;
+		foreach($supertypesArray as $supertype) {
+			$preparedSupertype = "'" . Database::sanitizeString($supertype) . "'";
+			$checkSupertypeEx = "SELECT * FROM mtg_supertypes WHERE name = {$preparedSupertype}";
+			$checkSupertypeResult = Database::query($checkSupertypeEx);
+			if($checkSupertypeResult->num_rows == 0) {
+				$insertSupertypeEx = "INSERT INTO mtg_supertypes (
+					name)
+					VALUES (
+					{$preparedSupertype}
+				)";
+				Database::query($insertSupertypeEx);
+				$supertypeId = Database::$connection->insert_id;
+			}
+			else {
+				$responseSupertypeArray = $checkSupertypeResult->fetch_assoc();
+				$supertypeId = intval($responseSupertypeArray["id"]);
+			}
+			$insertRelCardSupertypeEx = "INSERT INTO mtg_cardSupertypes (
+				card,
+				supertype)
+				VALUES (
+				{$cardId},
+				{$supertypeId}
+			)";
+			Database::query($insertRelCardSupertypeEx);
 		}
 	}
 
