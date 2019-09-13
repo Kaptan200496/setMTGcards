@@ -19,88 +19,83 @@ foreach($files as $fileName) {
 	array_push($dataArray, json_decode(file_get_contents($fullFileName)));
 }
 
-for($i = 0; $i < count($dataArray); $i++) {
-// перебор массива файлов
-	for($j = 0; $j < count($dataArray[$i]->cards); $j++) {
-		// Перебор данных в каждом файле
-		$currentCard = $dataArray[$i]->cards[$j];
-		$name = isset($currentCard->name) ? $currentCard->name : NULL;
-		$prepearedName = "'" . Database::sanitizeString($name) . "'";
-		$manaCost = 	isset($currentCard->manaCost) ? $currentCard->manaCost : NULL;
-		$prepearedManaCost = "'" . Database::sanitizeString($manaCost) . "'";
-		$text = isset($currentCard->text) ? $currentCard->text : NULL;
-		$prepearedText = "'" . Database::sanitizeString($text) . "'";
-		$power = isset($currentCard->power) ? $currentCard->power : NULL;
-		$prepearedPower = "'" . Database::sanitizeString($power) . "'";
-		$toughness = isset($currentCard->toughness) ? $currentCard->toughness : NULL;
-		$prepearedToughness = "'" . Database::sanitizeString($toughness) . "'";
-
-		foreach($currentCard->types as $value) {
-			$typesArray = isset($value) ? "'{$value}'" : [];
-		}
-		foreach($currentCard->subtypes as $value) {
-			$subtypesArray = isset($value) ? "'{$value}'" : [];
-		}
-		foreach($currentCard->supertypes as $value) {
-			$supertypesArray = isset($value) ? "'{$value}'" : [];
-		}
-
-		//file_put_contents("subtypes.txt", json_encode($subtypesArray));
-		//file_put_contents("supertypes.txt", json_encode($supertypesArray));
-		//file_put_contents("types.txt", json_encode($typesArray));
-		// Запись в базу данных
-		$checkNameEx = "SELECT * FROM mtg_cards WHERE name = {$prepearedName}";
-		$responseValidation = Database::query($checkNameEx);
-		if($responseValidation->num_rows == 0) {
-			$insertExCards = "INSERT INTO mtg_cards (
-				name,
-				manaCost,
-				text,
-				power,
-				toughness
-			) VALUES (
-				{$prepearedName},
-				{$prepearedManaCost},
-				{$prepearedText},
-				{$prepearedPower},
-				{$prepearedToughness}
+foreach($dataArray as $deck) 	{
+	foreach($deck->cards as $card) {
+		$name = $card->name;
+		$preparedName = "'" . Database::sanitizeString($name) . "'";
+		$checkNameEx = "SELECT * FROM mtg_cards WHERE name = {$preparedName}";
+		$checkNameResult = Database::query($checkNameEx);
+		$cardId;
+		if($checkNameResult->num_rows == 0) {
+			$insertCardEx = "INSERT INTO mtg_cards (
+				name)
+				VALUES (
+				{$preparedName}
 			)";
-			Database::query($insertExCards);		
-			$lastIdCard = Database::$connection->insert_id;
+			Database::query($insertCardEx);
+			$cardId = Database::$connection->insert_id;
 		}
-		$selectTypeEx = "SELECT * FROM mtg_types WHERE name = {$typesArray}";
-		$responseSelectTEx = Database::query($selectTypeEx);
-		if($responseSelectTEx->num_rows == 0) {
-			$insertTypeEx = "INSERT INTO mtg_types (name) VALUES ({$typesArray})";
-			Database::query($insertTypeEx);
-			$lastIdType = Database::$connection->insert_id;
+		else {
+			continue;
 		}
-		$selectSubTypeEx = "SELECT * FROM mtg_subtypes WHERE name = {$subtypesArray}";
-		$responseSelectSubTEx = Database::query($selectSubTypeEx);
-		if($responseSelectSubTEx->num_rows == 0) {
-			$insertSubTypeEx = "INSERT INTO mtg_subtypes (name) 
-				VALUES ({$subtypesArray})";
-			Database::query($insertSubTypeEx);
-			$lastIdSubType = Database::$connection->insert_id;
+
+		$typesArray = $card->types;
+		$typeId;
+		foreach($typesArray as $type) {
+			$preparedType = "'" . Database::sanitizeString($type) . "'";
+			$checkTypeEx = "SELECT * FROM mtg_types WHERE name = {$preparedType}";
+			$checkTypeResult = Database::query($checkTypeEx);
+			if($checkTypeResult->num_rows == 0) {
+				$insertTypeEx = "INSERT INTO mtg_types (
+					name)
+				VALUES (
+					{$preparedType}
+				)";
+				Database::query($insertTypeEx);
+				$typeId = Database::$connection->insert_id;
+			}
+			else {
+				$responseTypeArray = $checkTypeResult->fetch_assoc();
+				$typeId = intval($responseTypeArray["id"]);
+			}
+			$insertRelCardTypeEx = "INSERT INTO mtg_cardTypes (
+				card,
+				type)
+			VALUES (
+				{$cardId},
+				{$typeId}
+			)";
+			Database::query($insertRelCardTypeEx);
 		}
-		$selectSuperTypeEx = "SELECT * FROM mtg_supertypes WHERE name = {$supertypesArray}";
-		$responseSelectSuperTEx = Database::query($selectSuperTypeEx);
-		if($responseSelectSuperTEx->num_rows == 0) {
-			$insertSuperTypeEx = "INSERT INTO mtg_supertypes (name) 
-				VALUES ({$supertypesArray})";
-			Database::query($insertSuperTypeEx);
-			$lastIdSuperType = Database::$connection->insert_id;
+		$subtypesArray = $card->subtypes;
+		$subtypeId;
+		foreach($subtypesArray as $subtype) {
+			$preparedSubtype = "'" . Database::sanitizeString($subtype);
+			$checkSubtypeEx = "SELECT * FROM mtg_subtypes WHERE name = {$preparedSubtype}";
+			$checkSubtypeResult = Database::query($checkSubtypeEx);
+			if($checkSubtypeResult->num_rows == 0) {
+				$insertSubtypeEx = "INSERT INTO mtg_subtypes (
+					name)
+					VALUES (
+					{$preparedSubtype}
+				)";
+				Database::query($insertSubtypeEx);
+				$subtypeId = Database::$connection->insert_id;
+			}
+			else {
+				$responseSubtypeArray = $checkSubtypeResult->fetch_assoc();
+				$subtypeId = intval($responseSubtypeArray["id"]);
+			}
+			$insertRelCardSubtypeEx = "INSERT INTO mtg_cardSubtypes (
+				card,
+				subtype)
+				VALUES (
+				{$cardId},
+				{$subtypeId}
+			)";
 		}
-		$cardRelTypeEx = "INSERT INTO mtg_cardTypes (card, type) 
-			VALUES ({$lastIdCard}, {$lastIdType})";
-		Database::query($cardRelTypeEx);
-		$cardRelSubTypeEx = "INSERT INTO mtg_cardSubtypes (card, subtype) 
-			VALUES ({$lastIdCard}, {$lastIdSubType})";
-		Database::query($cardRelSubTypeEx);
-		$cardRelSuperTypeEx = "INSERT INTO mtg_cardSupertypes (card, supertype) 
-			VALUES ({$lastIdCard}, {$lastIdSuperType})";
-		Database::query($cardRelTypeEx);
 	}
+
 }
 
 ?>
