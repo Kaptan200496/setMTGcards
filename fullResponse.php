@@ -29,6 +29,7 @@ $checkDataExResult = Database::query($checkDataEx);
 $cardObject = new stdClass();
 if($checkDataExResult->num_rows > 0) {
 	$dataArray = $checkDataExResult->fetch_assoc();
+	$cardObject->id = intval($cardObject->id);
 	$cardObject->name = $dataArray["name"];
 	$cardObject->manaCost = $dataArray["manaCost"];
 	$cardObject->text = $dataArray["text"];
@@ -37,6 +38,49 @@ if($checkDataExResult->num_rows > 0) {
 else {
 	print ("Карта не найдена");
 }
-
+// Выятнуть все виды типов из базы относительно айди карты
+// Выягиваем тип и заносим его в объект
+$selectTypeEx = "
+		SELECT 
+			mtg_types.name 
+		FROM mtg_cards
+			JOIN mtg_cardTypes ON mtg_cards.id = mtg_cardTypes.card
+			JOIN mtg_types ON mtg_cardTypes.type = mtg_types.id
+		WHERE mtg_cards.name = '{$message}'
+		";
+	$selectTypeResult = Database::query($selectTypeEx);
+	if($selectTypeResult->num_rows > 0) {
+		$type = $selectTypeResult->fetch_assoc();
+		$cardObject->type = $type["name"];
+	}
+	// Если типа нет то занросим в обхект пустую строку
+	else {
+		$cardObject->type = "";
+	}
+// Вытягиваем подтип и заносим его в объект 
+$selectSubtypeEx = "
+		SELECT 
+			mtg_subtypes.name 
+		FROM mtg_cards
+			JOIN mtg_cardSubtypes ON mtg_cards.id = mtg_cardSubtypes.card
+			JOIN mtg_subtypes ON mtg_cardSubtypes.subtype = mtg_subtypes.id
+		WHERE mtg_cards.name = '{$message}'
+		";
+		$selectSubtypeResult = Database::query($selectSubtypeEx);
+		if($selectSubtypeResult->num_rows > 0) {
+			// Создаем пустой массив на случай если строк больше 1
+			$subtypeArray = [];
+			// Создаем цикл для перебора строк 
+			for($i = 0; $i < $selectSubtypeResult->num_rows; $i++) {
+				$subtype = $selectSubtypeResult->fetch_assoc();
+				array_push($subtypeArray, $subtype);
+			}
+			// Заносим в объект массив 
+				$cardObject->subtype = $subtypeArray;		
+		}
+		// Если база ничего не выдала то заносим пустую строку в объект
+		else {
+			$cardObject->subtype = "";
+		}
 
 ?>
