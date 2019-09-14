@@ -26,11 +26,27 @@ foreach($dataArray as $deck) 	{
 		$checkNameEx = "SELECT * FROM mtg_cards WHERE name = {$preparedName}";
 		$checkNameResult = Database::query($checkNameEx);
 		$cardId;
+		$manaCost = "'" . Database::sanitizeString($card->manaCost) . "'";
+		$preparedManaCost = isset($card->manaCost) ? $manaCost : 'NULL';
+		$text = "'" . Database::sanitizeString($card->text) . "'";
+		$preparedText = isset($card->text) ? $text : 'NULL';
+		$power = "'" . Database::sanitizeString($card->power) . "'";
+		$preparedPower = isset($card->power) ? $power : 'NULL';
+		$toughness = "'" . Database::sanitizeString($card->toughness) . "'";
+		$preparedToughness = isset($card->toughness) ? $toughness : 'NULL';
 		if($checkNameResult->num_rows == 0) {
 			$insertCardEx = "INSERT INTO mtg_cards (
-				name)
+				name,
+				manaCost,
+				text,
+				power,
+				toughness)
 				VALUES (
-				{$preparedName}
+				{$preparedName},
+				{$preparedManaCost},
+				{$preparedText},
+				{$preparedPower},
+				{$preparedToughness}
 			)";
 			Database::query($insertCardEx);
 			$cardId = Database::$connection->insert_id;
