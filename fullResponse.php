@@ -27,6 +27,7 @@ $message = Database::sanitizeString($requestObject->message->text);
 $checkDataEx = "SELECT * FROM mtg_cards WHERE name = '{$message}'";
 $checkDataExResult = Database::query($checkDataEx);
 $cardObject = new stdClass();
+$card = new stdClass();
 if($checkDataExResult->num_rows > 0) {
 	$dataArray = $checkDataExResult->fetch_assoc();
 	$cardObject->name = $dataArray["name"];
@@ -54,11 +55,11 @@ $selectTypeEx = "
 		$type = $selectTypeResult->fetch_assoc();
 		array_push($typeArray, $type);
 		}
-		$cardObject->type = $typeArray;
+		$card->type = $typeArray;
 	}
-	// Если типа нет то занросим в обхект пустую строку
+	// Если типа нет, то занросим в обхект пустую строку
 	else {
-		$cardObject->type = "";
+		$card->type = "";
 	}
 // Вытягиваем подтип и заносим его в объект 
 $selectSubtypeEx = "
@@ -79,12 +80,13 @@ $selectSubtypeEx = "
 				array_push($subtypeArray, $subtype);
 			}
 			// Заносим в объект массив 
-				$cardObject->subtype = $subtypeArray;		
+				$card->subtype = $subtypeArray;		
 		}
-		// Если база ничего не выдала то заносим пустую строку в объект
+		// Если база ничего не выдала, то заносим пустую строку в объект
 		else {
-			$cardObject->subtype = "";
+			$card->subtype = "";
 		}
+// Создаем запрос и вытягиваем данные о надтипах из базы
 $selectSupertypeEx = "
 		SELECT 
 			mtg_supertypes.name 
@@ -95,16 +97,55 @@ $selectSupertypeEx = "
 		";
 		$selectSupertypeResult = Database::query($selectSupertypeEx);
 		if($selectSupertypeResult->num_rows > 0) {
+			// Создаем пустой массив на случай если строк больше 1
 			$supertypeArray = [];
+			// Создаем цикл для перебора строк
 			for($i = 0; $i < $selectSupertypeResult->num_rows; $i++) {
 				$supertype = $selectSupertypeResult->fetch_assoc();
 				array_push($supertyArray, $supertype);
 			}
-			$cardObject->supertype = $supertyArray;
+			// Заносим массив в объект
+			$card->supertype = $supertyArray;
 		}
+		// Если база ничего не выдала, то заносим в объект пустую строку
 		else {
-			$cardObject->supertype = "";
+			$card->supertype = "";
 		}
+// Создаем сырые аргументы для запроса приват банку так же создаем  пустой объект для помещения туда
 
-
+$rawArgumentsPB = [
+	"json" => 1,
+	"exchange" => 1,
+	"coursid" => 11 
+];
+// Отправляем запрос приват банку методом pubinfo и получаем курс гривны и доллара на данный момент
+$rateData = $pb->request("pubinfo", $rawArgumentsPB);
+$card->rate = $rateData[0]->sale;
+// Создаем сырые аргумент для запроса классу scryfall 
+// ссылки на изображение и цены карты
+$rawArgumentsSF = [
+	'json' => 1,
+	'exact' => $message
+];
+$cardData = $sf->request("named", $rawArgumentsSF);
+$card->priceUSD = $cardData->prices->usd;
+$card->address = $cardData->image_uris->large;
+$card->priceUAH = $card->priceUSD * $card->rate;
+$cardObject->type = $card->supertype . ' ' . $card->type . ' ' . '-' . $card->subtype;
+$cardObject->price = "Цена:" . $card->priceUAH . "(" . $card->priceUSD . ")";
+$methodMessage = "sendMessage";
+$cardDescriptionRow = $cardObject->name . "\n" . $cardObject->manaCost . "\n" .
+ $cardObject->type . "\n" . $cardObject->text . "\n" . $cardObject->powerTougnhess .
+ "\n" .$cardObject->price;
+$rawArgumentsMessage = [
+	"chat_id" => $requestObject->message->chat->id,
+	"text" => $cardDescriptionRow
+];
+$responsePhoto = $bot->request($methodMessage, $rawArgumentsMessage);
+$methodPhoto = "sendPhoto";
+$rawArgumentsPhoto = [
+	"chat_id" => $requestObject->message->chat->id,
+	"photo" => $card->address
+];
+$responseMessage = $bot->request($methodPhoto, $rawArgumentsPhoto);
 ?>
