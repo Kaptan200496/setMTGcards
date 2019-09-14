@@ -29,7 +29,6 @@ $checkDataExResult = Database::query($checkDataEx);
 $cardObject = new stdClass();
 if($checkDataExResult->num_rows > 0) {
 	$dataArray = $checkDataExResult->fetch_assoc();
-	$cardObject->id = intval($cardObject->id);
 	$cardObject->name = $dataArray["name"];
 	$cardObject->manaCost = $dataArray["manaCost"];
 	$cardObject->text = $dataArray["text"];
@@ -50,8 +49,12 @@ $selectTypeEx = "
 		";
 	$selectTypeResult = Database::query($selectTypeEx);
 	if($selectTypeResult->num_rows > 0) {
+		$typeArray = [];
+		for($i = 0; $i < $selectTypeResult->num_rows; $i++) {
 		$type = $selectTypeResult->fetch_assoc();
-		$cardObject->type = $type["name"];
+		array_push($typeArray, $type);
+		}
+		$cardObject->type = $typeArray;
 	}
 	// Если типа нет то занросим в обхект пустую строку
 	else {
@@ -82,5 +85,26 @@ $selectSubtypeEx = "
 		else {
 			$cardObject->subtype = "";
 		}
+$selectSupertypeEx = "
+		SELECT 
+			mtg_supertypes.name 
+		FROM mtg_cards
+			JOIN mtg_cardSupertypes ON mtg_cards.id = mtg_cardSupertypes.card
+			JOIN mtg_supertypes ON mtg_cardSupertypes.supertype = mtg_supertypes.id
+		WHERE mtg_cards.name = '{$message}'
+		";
+		$selectSupertypeResult = Database::query($selectSupertypeEx);
+		if($selectSupertypeResult->num_rows > 0) {
+			$supertypeArray = [];
+			for($i = 0; $i < $selectSupertypeResult->num_rows; $i++) {
+				$supertype = $selectSupertypeResult->fetch_assoc();
+				array_push($supertyArray, $supertype);
+			}
+			$cardObject->supertype = $supertyArray;
+		}
+		else {
+			$cardObject->supertype = "";
+		}
+
 
 ?>
