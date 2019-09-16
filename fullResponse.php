@@ -16,8 +16,8 @@ Database::connect();
 // Создать пустые переменные  с объектами ботов для дальнейшей работы
 $sf = new Scryfall();
 $pb = new PrivatBank();
-$bot = new TelegramBot("bottoken");
-
+$token = json_decode(file_get_contents("settingstoken.json"));
+$bot = new TelegramBot($token);
 // Получить данные от пользоватля телеграма
 $requestText = file_get_contents("php://input");
 // Обработать данные о названии карты и поместить ее в переменную для удобства работы с ней
@@ -33,7 +33,8 @@ if($checkDataExResult->num_rows > 0) {
 	$cardObject->name = $dataArray["name"];
 	$cardObject->manaCost = $dataArray["manaCost"];
 	$cardObject->text = $dataArray["text"];
-	$cardObject->powerTougnhess = $dataArray["power"] . "/" . $dataArray["toughness"];
+	$cardObject->power = $dataArray["power"];
+	$cardObject->toughness = $dataArray["toughness"];
 		// Выятнуть все виды типов из базы относительно айди карты
 		// Выягиваем тип и заносим его в объект
 		$selectTypeEx = "
@@ -76,7 +77,7 @@ if($checkDataExResult->num_rows > 0) {
 						array_push($subtypeArray, $subtype["name"]);
 					}
 					// Заносим в объект строку 
-						$card->subtype = implode($subtypeArray);		
+						$card->subtype = implode(" ", $subtypeArray);		
 				}
 				// Если база ничего не выдала, то заносим пустую строку в объект
 				else {
@@ -98,7 +99,7 @@ if($checkDataExResult->num_rows > 0) {
 					// Создаем цикл для перебора строк
 					for($i = 0; $i < $selectSupertypeResult->num_rows; $i++) {
 						$supertype = $selectSupertypeResult->fetch_assoc();
-						array_push($supertyArray, $supertype["name"]);
+						array_push($supertypeArray, $supertype["name"]);
 					}
 					// Заносим массив в объект
 					$card->supertype = implode($supertypeArray);
@@ -123,17 +124,48 @@ if($checkDataExResult->num_rows > 0) {
 			'json' => 1,
 			'exact' => $message
 		];
-		$cardData = $sf->request("named", $rawArgumentsSF);
-		$card->priceUSD = $cardData->prices->usd;
+		// Создаем переменную для описания 
+		$cardDescriptionRow = $cardObject->name . "\n"; 
+		// Проверяем наявность мана коста если есть записываем
+		if(isset($cardObject->manaCost)) {
+			$cardDescriptionRow = $cardDescriptionRow . $cardObject->manaCost . "\n";
+		}
+		// Проверяем наявность всех типов по очереди если есть, то записываем 
+		if(isset($card->supertype)) {
+			$cardObject->type = $card->supertype . " ";
+		}
+		if(isset($card->type)) {
+			$cardObject->type = $cardObject->type . $card->type;
+		}
+		if(isset($card->subtype)) {
+			$cardObject->type = $cardObject->type . " " . "-" . " " . $card->subtype;
+		}
+		// Записываем общую строку типов которая вышла в нашу переменную
+		$cardDescriptionRow = $cardDescriptionRow . $cardObject->type . "\n";
+		if(isset($cardobject->text)) {
+			$cardDescriptionRow = $cardDescriptionRow . $cardobject->text . "\n";
+		}
+		// Проверяем есть ли у карты сила и выносливость, если есть - записываем
+		if(isset($cardObject->power) & isset($cardObject->toughness)) {
+			$cardDescriptionRow = $cardDescriptionRow . $cardObject->power . "/" . $cardObject->toughness . "\n";		
+		}
+		// Подаем запрос scryfall
+		$cardData = $sf->request("named", ["exact" => $message]);
+		// Проверяем есть ли цена или она не указана
+		// Адресс ссылки на изображение карты
 		$card->address = $cardData->image_uris->large;
-		$card->priceUAH = $card->priceUSD * $card->rate;
-		$cardObject->type = $card->supertype . " " . $card->type . "-" . $card->subtype;
-		
-		$cardObject->price = "Цена:" . $card->priceUAH . "(" . $card->priceUSD . ")";
+		// Проверяем если цена в долларах не указана то цену не выводим
+		if(isset($cardData->prices->usd)) {
+			$card->priceUSD = round($cardData->prices->usd, 2);
+			$card->priceUAH = round(($card->priceUSD * $card->rate), 2);
+			$cardObject->price = "Цена:" . " " . $card->priceUAH . " ". "(" . "$" . $card->priceUSD . ")";
+			$cardDescriptionRow = $cardDescriptionRow . $cardObject->price;
+		}
+		else {
+			$cardDescriptionRow = $cardDescriptionRow . "цена не извесна";
+		}
+
 		$methodMessage = "sendMessage";
-		$cardDescriptionRow = $cardObject->name . "\n" . $cardObject->manaCost . "\n" .
-		 $cardObject->type . "\n" . $cardObject->text . "\n" . $cardObject->powerTougnhess .
-		 "\n" .$cardObject->price;
 		$rawArgumentsMessage = [
 			"chat_id" => $requestObject->message->chat->id,
 			"text" => $cardDescriptionRow
@@ -147,6 +179,10 @@ if($checkDataExResult->num_rows > 0) {
 		$responseMessage = $bot->request($methodPhoto, $rawArgumentsPhoto);
 }
 else {
-	print ("Карта не найдена");
+	$rawArguments = [
+		"chat_id" => $requestObject->message->chat->id,
+		"text" => "Карта не найдена"
+	];
+	$response = $bot->request("sendMessage", $rawArguments);
 }
 ?>
