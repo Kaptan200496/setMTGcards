@@ -80,9 +80,6 @@ if($checkDataExResult->num_rows > 0) {
 						$card->subtype = implode(" ", $subtypeArray);		
 				}
 				// Если база ничего не выдала, то заносим пустую строку в объект
-				else {
-					$card->subtype = "";
-				}
 		// Создаем запрос и вытягиваем данные о надтипах из базы
 		$selectSupertypeEx = "
 				SELECT 
@@ -105,9 +102,7 @@ if($checkDataExResult->num_rows > 0) {
 					$card->supertype = implode($supertypeArray);
 				}
 				// Если база ничего не выдала, то заносим в объект пустую строку
-				else {
-					$card->supertype = "";
-				}
+			
 		// Создаем сырые аргументы для запроса приват банку так же создаем  пустой объект для помещения туда
 
 		$rawArgumentsPB = [
@@ -162,7 +157,7 @@ if($checkDataExResult->num_rows > 0) {
 			$cardDescriptionRow = $cardDescriptionRow . $cardObject->price;
 		}
 		else {
-			$cardDescriptionRow = $cardDescriptionRow . "цена не извесна";
+			$cardDescriptionRow = $cardDescriptionRow . "цена не известна";
 		}
 
 		$methodMessage = "sendMessage";
