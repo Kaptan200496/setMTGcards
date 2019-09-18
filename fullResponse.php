@@ -54,10 +54,6 @@ if($checkDataExResult->num_rows > 0) {
 				}
 				$card->type = implode($typeArray);
 			}
-			// Если типа нет, то занросим в обхект пустую строку
-			else {
-				$card->type = "";
-			}
 		// Вытягиваем подтип и заносим его в объект 
 		$selectSubtypeEx = "
 				SELECT 
