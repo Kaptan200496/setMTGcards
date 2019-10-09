@@ -1,19 +1,9 @@
-<?php
+ <?php
 class TelegramBot {
-	// Static properties
+	// Статическое свойство
 	private static $serviceUrl = "https://api.telegram.org/bot";
-
-	// Object properties
+	//Свойства бот токен  
 	private $token = "";
-	public $contact;
-
-	// TODO: ubrat' nafig
-	// Function to generate urlencoded arguments
-	private static function generateQueryStringArgument($name, $value) {
-		$encodedValue = urlencode($value);
-		$result = "{$name}={$encodedValue}";
-		return $result;
-	}
 
 	public function __construct($botToken) {
 		$this->token = $botToken;
@@ -21,13 +11,19 @@ class TelegramBot {
 	}
 
 	public function request($method, $rawArguments = []) {
+		// Переменная с url сервиса к которому подаетсся запрос
 		$serviceUrl = self::$serviceUrl;
+		// Токен бота для запроса
 		$botToken = $this->token;
+		// Собираем строку для запроса
 		$curl = "{$serviceUrl}{$botToken}/{$method}";
+		// Создаем новый сеанс cURL
 		$curlRequest = curl_init($curl);
+		// Создаем массив с заголовками
 		$headers = [
 			"Content-Type: application/json"
 		];
+		// Задаем заголовки
 		curl_setopt($curlRequest, CURLOPT_HTTPHEADER, $headers);
 		// Указываем, что это POST запрос
 		curl_setopt($curlRequest, CURLOPT_POST, true);
