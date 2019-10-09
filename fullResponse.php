@@ -35,7 +35,7 @@ if($checkDataExResult->num_rows > 0) {
 	$cardObject->text = $dataArray["text"];
 	$cardObject->power = $dataArray["power"];
 	$cardObject->toughness = $dataArray["toughness"];
-		// Выятнуть все виды типов из базы относительно айди карты
+		// Вытянуть все виды типов из базы относительно айди карты
 		// Выягиваем тип и заносим его в объект
 		$selectTypeEx = "
 				SELECT 
@@ -155,20 +155,24 @@ if($checkDataExResult->num_rows > 0) {
 		else {
 			$cardDescriptionRow = $cardDescriptionRow . "цена не известна";
 		}
-
+		// Создаем переменные с методом и аргументами для вывода сооьбщения в телеграм
 		$methodMessage = "sendMessage";
 		$rawArgumentsMessage = [
 			"chat_id" => $requestObject->message->chat->id,
 			"text" => $cardDescriptionRow
 		];
-		$responsePhoto = $bot->request($methodMessage, $rawArgumentsMessage);
+		// Передаем данные с методом и аргументами классу телеграма
+		$responseMessage = $bot->request($methodMessage, $rawArgumentsMessage);
+		// Создаем переменные с методом и аргументами для отправки изобрадения
 		$methodPhoto = "sendPhoto";
 		$rawArgumentsPhoto = [
 			"chat_id" => $requestObject->message->chat->id,
 			"photo" => $card->address
 		];
-		$responseMessage = $bot->request($methodPhoto, $rawArgumentsPhoto);
+		// Передаем метод и аргументы классу телеграма
+		$responsePhoto = $bot->request($methodPhoto, $rawArgumentsPhoto);
 }
+// Если карта не найдена - отвечаем что такой карты в базе нет
 else {
 	$rawArguments = [
 		"chat_id" => $requestObject->message->chat->id,
