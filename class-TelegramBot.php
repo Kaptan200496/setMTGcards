@@ -1,14 +1,19 @@
  <?php
+ /*Файл предназначен для обращения к API ботов телеграма*/
+ // Ссылка на документацию API https://core.telegram.org/bots/api
 class TelegramBot {
 	// url сервиса
 	private static $serviceUrl = "https://api.telegram.org/bot";
 	// Свойство для токена 
 	private $token = "";
-	
+	// Конструктор аргументом которого является Токен бота(string)
 	public function __construct($botToken) {
 		$this->token = $botToken;	
 	}
-
+	// Метод для составления и отправки запроса к API
+	// $method(string) - метод запроса 
+	// $rawArguments(array) - "сырые" аргументы запроса
+	// Возвращает id сообщения отправленого ботом
 	public function request($method, $rawArguments = []) {
 		// Переменная с url сервиса к которому подаетсся запрос
 		$serviceUrl = self::$serviceUrl;
@@ -34,6 +39,6 @@ class TelegramBot {
 		$serverOutput = curl_exec($curlRequest);
 		// Закрываем запрос
 		curl_close($curlRequest);
-
+		return json_decode($serverOutput);
 	}
 }

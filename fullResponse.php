@@ -1,19 +1,21 @@
 <?php  
+/*Файл принимает данные сообщения от пользователя(название карты),
+вытягивает данные о карте из БД, обращается к api сервисов scryfall, privatbank  и достает данные о цене на карту в долларе,курсе доллара и гривны и адресе изображения карты, выводит полный ответ с названием карты, изображением, данными о ней и цене в гривне и долларе*/ 
 // Подключить класы бд, телеграма, приватбанка, скрайфол,настройки и класс настроек
 $includes = [
-	"class-scryfall.php",
+	"class-Scryfall.php",
 	"class-PrivatBank.php",
 	"class-TelegramBot.php",
 	"class-database.php",
 	"class-settings-provider.php",
-	];
+];
 foreach($includes as $fileToInclude) {
 	require_once($fileToInclude);
-	}
+}
 require_once("settings.php");
 // Подключиться к базе
 Database::connect();
-// Создать пустые переменные  с объектами ботов для дальнейшей работы
+// Создать переменные с объектами ботов для дальнейшей работы
 $sf = new Scryfall();
 $pb = new PrivatBank();
 $token = json_decode(file_get_contents("settingstoken.json"));
@@ -26,7 +28,9 @@ $message = Database::sanitizeString($requestObject->message->text);
 // Вытянуть данные из базы относительно названия карты и поместить их в переменные для работы с ними
 $checkDataEx = "SELECT * FROM mtg_cards WHERE name = '{$message}'";
 $checkDataExResult = Database::query($checkDataEx);
+// Создаем объект с в котором будут готовые данные
 $cardObject = new stdClass();
+// Создаем объект с сырыми данными которые достаем путем обращения к API сервисов
 $card = new stdClass();
 if($checkDataExResult->num_rows > 0) {
 	$dataArray = $checkDataExResult->fetch_assoc();
@@ -109,19 +113,13 @@ if($checkDataExResult->num_rows > 0) {
 		// Отправляем запрос приват банку методом pubinfo и получаем курс гривны и доллара на данный момент
 		$rateData = $pb->request("pubinfo", $rawArgumentsPB);
 		$card->rate = $rateData[0]->sale;
-		// Создаем сырые аргумент для запроса классу scryfall 
-		// ссылки на изображение и цены карты
-		$rawArgumentsSF = [
-			'json' => 1,
-			'exact' => $message
-		];
-		// Создаем переменную для описания 
+		// Создаем переменную для строки с данными для вывода
 		$cardDescriptionRow = $cardObject->name . "\n"; 
-		// Проверяем наявность мана коста если есть записываем
+		// Проверяем наличие мана коста если есть записываем
 		if(isset($cardObject->manaCost)) {
 			$cardDescriptionRow = $cardDescriptionRow . $cardObject->manaCost . "\n";
 		}
-		// Проверяем наявность всех типов по очереди если есть, то записываем 
+		// Проверяем наличие всех типов по очереди если есть, то записываем 
 		if(isset($card->supertype)) {
 			$cardObject->type = $card->supertype . " ";
 		}
@@ -156,21 +154,19 @@ if($checkDataExResult->num_rows > 0) {
 			$cardDescriptionRow = $cardDescriptionRow . "цена не известна";
 		}
 		// Создаем переменные с методом и аргументами для вывода сооьбщения в телеграм
-		$methodMessage = "sendMessage";
 		$rawArgumentsMessage = [
 			"chat_id" => $requestObject->message->chat->id,
 			"text" => $cardDescriptionRow
 		];
 		// Передаем данные с методом и аргументами классу телеграма
-		$responseMessage = $bot->request($methodMessage, $rawArgumentsMessage);
+		$responseMessage = $bot->request('sendMessage', $rawArgumentsMessage);
 		// Создаем переменные с методом и аргументами для отправки изобрадения
-		$methodPhoto = "sendPhoto";
 		$rawArgumentsPhoto = [
 			"chat_id" => $requestObject->message->chat->id,
 			"photo" => $card->address
 		];
 		// Передаем метод и аргументы классу телеграма
-		$responsePhoto = $bot->request($methodPhoto, $rawArgumentsPhoto);
+		$responsePhoto = $bot->request('sendPhoto', $rawArgumentsPhoto);
 }
 // Если карта не найдена - отвечаем что такой карты в базе нет
 else {
