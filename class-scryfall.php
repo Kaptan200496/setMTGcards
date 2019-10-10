@@ -1,6 +1,6 @@
 <?php 
 class Scryfall {
-	// Статическое свойство 
+	// url сервиса 
 	private static $serviceUrl = "https://api.scryfall.com/cards";
 	// Метод для перевода данных в удобные для использования в адресной строке
 	function generateQueryStringArgument($name, $value) {

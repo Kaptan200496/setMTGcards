@@ -1,10 +1,10 @@
  <?php
 class TelegramBot {
-	// Статическое свойство
+	// url сервиса
 	private static $serviceUrl = "https://api.telegram.org/bot";
-	//Свойства бот токен  
+	// Свойство для токена 
 	private $token = "";
-
+	
 	public function __construct($botToken) {
 		$this->token = $botToken;	
 	}
