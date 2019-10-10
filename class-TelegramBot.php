@@ -6,8 +6,7 @@ class TelegramBot {
 	private $token = "";
 
 	public function __construct($botToken) {
-		$this->token = $botToken;
-		
+		$this->token = $botToken;	
 	}
 
 	public function request($method, $rawArguments = []) {
